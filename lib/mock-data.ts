@@ -1,5 +1,5 @@
 import type { User, Property, ChatMessage, Document, Visit, Reservation } from "./types"
-
+import type { Notification } from "./types"
 // Mock users
 export const mockUsers: User[] = [
   {
@@ -199,6 +199,8 @@ export const mockReservations: Reservation[] = [
     expiryDate: "2024-03-15T00:00:00Z",
     status: "Activa",
     notes: "Cliente muy interesado, reserva de 30 días",
+    amount: 68000,              
+    receiptNumber: "REC-001",   
     createdAt: "2024-02-15T00:00:00Z",
   },
   {
@@ -210,6 +212,8 @@ export const mockReservations: Reservation[] = [
     expiryDate: "2024-02-25T00:00:00Z",
     status: "Confirmada",
     notes: "Reserva confirmada, pendiente de firma de contrato",
+    amount: 45000,              
+    receiptNumber: "REC-002",   
     createdAt: "2024-02-10T00:00:00Z",
   },
   {
@@ -221,6 +225,33 @@ export const mockReservations: Reservation[] = [
     expiryDate: "2024-02-05T00:00:00Z",
     status: "Expirada",
     notes: "Cliente no pudo completar la compra a tiempo",
+    amount: 125000,             
+    receiptNumber: "REC-003",   
     createdAt: "2024-01-20T00:00:00Z",
   },
 ]
+
+// Mock notifications
+export const mockNotifications: Notification[] = []
+
+// Helper function to create notifications
+export const createNotification = (
+  userId: string,
+  type: Notification["type"],
+  title: string,
+  message: string,
+  relatedId?: string
+) => {
+  const notification: Notification = {
+    id: `notif-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    userId,
+    type,
+    title,
+    message,
+    relatedId,
+    read: false,
+    createdAt: new Date().toISOString(),
+  }
+  mockNotifications.push(notification)
+  return notification
+}

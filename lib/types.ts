@@ -68,6 +68,7 @@ export interface Visit {
   createdAt: string
 }
 
+
 // Reservation type for property reservations
 export interface Reservation {
   id: string
@@ -78,5 +79,19 @@ export interface Reservation {
   expiryDate: string
   status: "Activa" | "Expirada" | "Cancelada" | "Confirmada"
   notes?: string
+  amount?: number           
+  receiptNumber?: string    
+  createdAt: string
+}
+
+// Notification system
+export interface Notification {
+  id: string
+  userId: string
+  type: "visit_cancelled" | "reservation_created" | "property_reserved" | "general"
+  title: string
+  message: string
+  relatedId?: string // ID de la visita, propiedad, etc.
+  read: boolean
   createdAt: string
 }

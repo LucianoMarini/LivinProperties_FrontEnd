@@ -6,7 +6,7 @@ import { useAuth } from "@/contexts/auth-context"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { mockVisits, mockProperties, mockUsers } from "@/lib/mock-data"
+import { mockVisits, mockProperties, mockUsers, createNotification } from "@/lib/mock-data"
 import { Calendar, Clock, MapPin, User, Plus, CheckCircle, XCircle } from "lucide-react"
 import { useState } from "react"
 import {
@@ -22,13 +22,18 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import type { VisitStatus } from "@/lib/types"
+// Define VisitStatus type locally if not exported from "@/lib/types"
+type VisitStatus = "Programada" | "Completada" | "Cancelada"
 import { useSearchParams } from "next/navigation"
 
 export default function VisitsPage() {
   const { user } = useAuth()
   const searchParams = useSearchParams()
   const [isScheduleOpen, setIsScheduleOpen] = useState(false)
+  const [isCancelOpen, setIsCancelOpen] = useState(false)
+  const [selectedVisitId, setSelectedVisitId] = useState<string>("")
+  const [cancelReason, setCancelReason] = useState("")
+  
   const [scheduleForm, setScheduleForm] = useState({
     propertyId: searchParams.get("property") || "",
     clientId: "",
@@ -82,6 +87,41 @@ export default function VisitsPage() {
       scheduledDate: "",
       notes: "",
     })
+  }
+
+  const handleCancelVisit = (e: React.FormEvent) => {
+  e.preventDefault()
+  const visit = mockVisits.find((v) => v.id === selectedVisitId)
+  if (visit) {
+    visit.status = "Cancelada"
+    
+    // Obtener información de la propiedad para la notificación
+    const property = mockProperties.find((p) => p.id === visit.propertyId)
+    const fechaVisita = new Date(visit.scheduledDate).toLocaleDateString("es-ES", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit"
+    })
+    
+    // Crear notificación para el cliente
+    createNotification(
+      visit.clientId,
+      "visit_cancelled",
+      "Visita Cancelada",
+      `Tu visita a "${property?.title}" programada para el ${fechaVisita} ha sido cancelada. Motivo: ${cancelReason}`,
+      visit.id
+    )
+  }
+  setIsCancelOpen(false)
+  setCancelReason("")
+  setSelectedVisitId("")
+}
+
+  const openCancelDialog = (visitId: string) => {
+    setSelectedVisitId(visitId)
+    setIsCancelOpen(true)
   }
 
   const handleUpdateStatus = (visitId: string, status: VisitStatus) => {
@@ -236,6 +276,53 @@ export default function VisitsPage() {
         )}
       </div>
 
+      {/* Dialog para cancelar visita con motivo */}
+      <Dialog open={isCancelOpen} onOpenChange={setIsCancelOpen}>
+        <DialogContent>
+          <form onSubmit={handleCancelVisit}>
+            <DialogHeader>
+              <DialogTitle>Cancelar Visita</DialogTitle>
+              <DialogDescription>
+                Ingresa el motivo de la cancelación. El cliente será notificado automáticamente.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="cancelReason">Motivo de Cancelación</Label>
+                <Textarea
+                  id="cancelReason"
+                  placeholder="Ej: Solicitud del cliente, cambio de agenda, propiedad no disponible..."
+                  value={cancelReason}
+                  onChange={(e) => setCancelReason(e.target.value)}
+                  rows={4}
+                  required
+                />
+              </div>
+              <div className="rounded-lg bg-muted p-3 text-sm text-muted-foreground">
+                <p>Al confirmar la cancelación:</p>
+                <ul className="list-disc list-inside mt-2 space-y-1">
+                  <li>La visita cambiará a estado "Cancelada"</li>
+                  <li>El cliente recibirá una notificación por email</li>
+                  <li>El motivo quedará registrado en el sistema</li>
+                </ul>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => {
+                setIsCancelOpen(false)
+                setCancelReason("")
+                setSelectedVisitId("")
+              }}>
+                Volver
+              </Button>
+              <Button type="submit" variant="destructive">
+                Confirmar Cancelación
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
       {visits.length === 0 ? (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
@@ -330,7 +417,7 @@ export default function VisitsPage() {
                         variant="outline"
                         size="sm"
                         className="gap-2 text-destructive bg-transparent"
-                        onClick={() => handleUpdateStatus(visit.id, "Cancelada")}
+                        onClick={() => openCancelDialog(visit.id)}
                       >
                         <XCircle className="h-4 w-4" />
                         Cancelar Visita
@@ -370,13 +457,13 @@ export default function VisitsPage() {
               <span className="text-xs font-bold text-primary">2</span>
             </div>
             <div>
-              <p className="font-medium">Confirmación</p>
+              <p className="font-medium">Cancelación</p>
               <p className="text-muted-foreground">
                 {user?.role === "Cliente"
-                  ? "El agente confirmará tu solicitud de visita y puede contactarte para detalles"
+                  ? "Si necesitas cancelar, contacta directamente con tu agente asignado"
                   : user?.role === "Agente"
-                    ? "Confirma las visitas con los clientes y reprograma según sea necesario"
-                    : "Revisa las visitas programadas y confirma o reprograma según sea necesario"}
+                    ? "Puedes cancelar visitas ingresando un motivo. El sistema notificará automáticamente al cliente"
+                    : "Los agentes registran las cancelaciones con motivo y el sistema notifica a los clientes"}
               </p>
             </div>
           </div>
