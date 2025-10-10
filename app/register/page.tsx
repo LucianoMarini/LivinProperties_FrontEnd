@@ -19,7 +19,7 @@ export default function RegisterPage() {
   const [password, setPassword] = useState("")
   const [name, setName] = useState("")
   const [phone, setPhone] = useState("")
-  const [role, setRole] = useState<UserRole>("Client")
+  const [role, setRole] = useState<UserRole>("Cliente")
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
   const router = useRouter()
@@ -35,10 +35,10 @@ export default function RegisterPage() {
       if (success) {
         router.push("/dashboard")
       } else {
-        setError("Email already exists")
+        setError("El email ya existe")
       }
     } catch (err) {
-      setError("An error occurred. Please try again.")
+      setError("Ocurrió un error. Por favor intenta de nuevo.")
     } finally {
       setLoading(false)
     }
@@ -54,18 +54,18 @@ export default function RegisterPage() {
               <span className="text-2xl font-bold text-primary">LivinProperties</span>
             </div>
           </div>
-          <CardTitle className="text-2xl">Create an account</CardTitle>
-          <CardDescription>Enter your information to get started</CardDescription>
+          <CardTitle className="text-2xl">Crear una cuenta</CardTitle>
+          <CardDescription>Ingresa tu información para comenzar</CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
             {error && <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">{error}</div>}
             <div className="space-y-2">
-              <Label htmlFor="name">Full Name</Label>
+              <Label htmlFor="name">Nombre Completo</Label>
               <Input
                 id="name"
                 type="text"
-                placeholder="John Doe"
+                placeholder="Juan Pérez"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
@@ -76,14 +76,14 @@ export default function RegisterPage() {
               <Input
                 id="email"
                 type="email"
-                placeholder="you@example.com"
+                placeholder="tu@ejemplo.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="phone">Phone (Optional)</Label>
+              <Label htmlFor="phone">Teléfono (Opcional)</Label>
               <Input
                 id="phone"
                 type="tel"
@@ -93,38 +93,38 @@ export default function RegisterPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">Contraseña</Label>
               <Input
                 id="password"
                 type="password"
-                placeholder="Create a password"
+                placeholder="Crea una contraseña"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="role">I am a</Label>
+              <Label htmlFor="role">Soy un</Label>
               <Select value={role} onValueChange={(value) => setRole(value as UserRole)}>
                 <SelectTrigger id="role">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Client">Client (Looking for property)</SelectItem>
-                  <SelectItem value="Agent">Agent (Real estate professional)</SelectItem>
-                  <SelectItem value="Administrator">Administrator</SelectItem>
+                  <SelectItem value="Cliente">Cliente (Buscando propiedad)</SelectItem>
+                  <SelectItem value="Agente">Agente (Profesional inmobiliario)</SelectItem>
+                  <SelectItem value="Administrador">Administrador</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </CardContent>
           <CardFooter className="flex flex-col gap-4">
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Creating account..." : "Create account"}
+              {loading ? "Creando cuenta..." : "Crear cuenta"}
             </Button>
             <p className="text-sm text-center text-muted-foreground">
-              Already have an account?{" "}
+              ¿Ya tienes una cuenta?{" "}
               <Link href="/login" className="text-primary hover:underline font-medium">
-                Sign in
+                Iniciar sesión
               </Link>
             </p>
           </CardFooter>
