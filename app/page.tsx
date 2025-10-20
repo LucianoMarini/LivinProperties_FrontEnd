@@ -1,20 +1,20 @@
-"use client"
+'use client';
 
-import { useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { useAuth } from "@/contexts/auth-context"
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/auth-context';
 
 export default function HomePage() {
-  const router = useRouter()
-  const { isAuthenticated } = useAuth()
+  const router = useRouter();
+  const { isAuthenticated } = useAuth();
 
   useEffect(() => {
     if (isAuthenticated) {
-      router.push("/dashboard")
+      router.push('/dashboard');
     } else {
-      router.push("/login")
+      router.push('/login');
     }
-  }, [isAuthenticated, router])
+  }, [isAuthenticated, router]);
 
   return (
     <div className="flex min-h-screen items-center justify-center">
@@ -23,5 +23,5 @@ export default function HomePage() {
         <p className="mt-4 text-muted-foreground">Loading...</p>
       </div>
     </div>
-  )
+  );
 }
