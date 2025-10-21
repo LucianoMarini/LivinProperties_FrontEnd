@@ -1,97 +1,106 @@
 // User roles
-export type UserRole = "Administrador" | "Agente" | "Cliente"
+export type UserRole = 'Administrador' | 'Agente' | 'Cliente';
 
 // User type
 export interface User {
-  id: string
-  email: string
-  name: string
-  role: UserRole
-  phone?: string
-  createdAt: string
+  id: string;
+  email: string;
+  name: string;
+  role: UserRole;
+  phone?: string;
+  createdAt: string;
 }
 
 // Property types
-export type PropertyType = "Apartamento" | "Casa" | "Villa" | "Terreno" | "Comercial"
-export type PropertyStatus = "Disponible" | "Reservada" | "Vendida"
+export type PropertyType =
+  | 'Apartamento'
+  | 'Casa'
+  | 'Villa'
+  | 'Terreno'
+  | 'Comercial';
+export type PropertyStatus = 'Disponible' | 'Reservada' | 'Vendida';
 
 export interface Property {
-  id: string
-  title: string
-  description: string
-  type: PropertyType
-  status: PropertyStatus
-  price: number
-  location: string
-  area: number // in square meters
-  bedrooms?: number
-  bathrooms?: number
-  images: string[]
-  agentId: string
-  createdAt: string
-  updatedAt: string
+  id: string;
+  title: string;
+  description: string;
+  type: PropertyType;
+  status: PropertyStatus;
+  price: number;
+  location: string;
+  area: number; // in square meters
+  bedrooms?: number;
+  bathrooms?: number;
+  images: string[];
+  agentId: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 // Chat message
 export interface ChatMessage {
-  id: string
-  senderId: string
-  receiverId: string
-  propertyId?: string
-  message: string
-  createdAt: string
-  read: boolean
+  id: string;
+  senderId: string;
+  receiverId: string;
+  propertyId?: string;
+  message: string;
+  createdAt: string;
+  read: boolean;
 }
 
 // Document types
-export type DocumentType = "Contrato" | "Escritura"
+export type DocumentType = 'Contrato' | 'Escritura';
 
 export interface Document {
-  id: string
-  propertyId: string
-  type: DocumentType
-  fileName: string
-  fileUrl: string
-  uploadedBy: string
-  uploadedAt: string
+  id: string;
+  propertyId: string;
+  type: DocumentType;
+  fileName: string;
+  fileUrl: string;
+  uploadedBy: string;
+  uploadedAt: string;
 }
 
 // Visit/Reservation
 export interface Visit {
-  id: string
-  propertyId: string
-  clientId: string
-  agentId: string
-  scheduledDate: string
-  status: "Programada" | "Completada" | "Cancelada"
-  notes?: string
-  createdAt: string
+  id: string;
+  propertyId: string;
+  clientId: string;
+  agentId: string;
+  scheduledDate: string;
+  status: 'Programada' | 'Completada' | 'Cancelada';
+  notes?: string;
+  createdAt: string;
 }
-
 
 // Reservation type for property reservations
 export interface Reservation {
-  id: string
-  propertyId: string
-  clientId: string
-  agentId: string
-  reservationDate: string
-  expiryDate: string
-  status: "Activa" | "Expirada" | "Cancelada" | "Confirmada"
-  notes?: string
-  amount?: number           
-  receiptNumber?: string    
-  createdAt: string
+  id: string;
+  propertyId: string;
+  clientId: string;
+  agentId: string;
+  reservationDate: string;
+  expiryDate: string;
+  status: 'Activa' | 'Expirada' | 'Cancelada' | 'Confirmada';
+  notes?: string;
+  amount?: number;
+  receiptNumber?: string;
+  createdAt: string;
 }
 
 // Notification system
 export interface Notification {
-  id: string
-  userId: string
-  type: "visit_cancelled" | "reservation_created" | "property_reserved" | "general"
-  title: string
-  message: string
-  relatedId?: string // ID de la visita, propiedad, etc.
-  read: boolean
-  createdAt: string
+  id: string;
+  userId: string;
+  type:
+    | 'visit_cancelled'
+    | 'visit_completed'
+    | 'reservation_created'
+    | 'property_reserved'
+    | 'general';
+  title: string;
+  message: string;
+  relatedId?: string; // ID de la visita, propiedad, etc.
+  read: boolean;
+  createdAt: string;
 }
