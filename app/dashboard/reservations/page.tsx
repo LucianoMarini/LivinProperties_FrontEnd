@@ -1,333 +1,299 @@
 "use client"
 
 import { useState } from "react"
-import { useAuth } from "@/contexts/auth-context"
-import { mockReservations, mockProperties, mockUsers } from "@/lib/mock-data"
-import type { Reservation } from "@/lib/types"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Building2, Calendar, Clock, DollarSign, FileText, MapPin, User, X, CheckCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Building2, Calendar, User, Clock, CheckCircle, XCircle, AlertCircle, DollarSign, FileText } from "lucide-react"
-import { format } from "date-fns"
-import { es } from "date-fns/locale"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { Textarea } from "@/components/ui/textarea"
+import { Label } from "@/components/ui/label"
 
-export default function ReservationsPage() {
-  const { user } = useAuth()
-  const [reservations] = useState<Reservation[]>(mockReservations)
+type ReservationStatus = "Activa" | "Expirada" | "Cancelada" | "Confirmada"
 
-  if (!user) return null
+interface Reservation {
+  id: string
+  propertyName: string
+  location: string
+  status: ReservationStatus
+  client: string
+  agent: string
+  voucher: string
+  propertyPrice: number
+  reservationAmount: number
+  percentage: number
+  reservationDate: string
+  expirationDate: string
+  daysRemaining: number
+  notes: string
+}
 
-  // Filter reservations based on role
-  const filteredReservations = reservations.filter((reservation) => {
-    if (user.role === "Administrador") return true
-    if (user.role === "Agente") return reservation.agentId === user.id
-    if (user.role === "Cliente") return reservation.clientId === user.id
-    return false
-  })
+export default function ReservasPage() {
+  const [reservations, setReservations] = useState<Reservation[]>([
+    {
+      id: "1",
+      propertyName: "Casa Familiar con Jardín",
+      location: "Zona Residencial, CA",
+      status: "Activa",
+      client: "Michael Brown",
+      agent: "John Smith",
+      voucher: "REC-001",
+      propertyPrice: 680000,
+      reservationAmount: 68000,
+      percentage: 10.0,
+      reservationDate: "14 feb 2024",
+      expirationDate: "14 mar 2024",
+      daysRemaining: 0,
+      notes: "Cliente muy interesado, reserva de 30 días",
+    },
+    {
+      id: "2",
+      propertyName: "Villa Frente al Mar de Lujo",
+      location: "Miami Beach, FL",
+      status: "Expirada",
+      client: "Michael Brown",
+      agent: "John Smith",
+      voucher: "REC-003",
+      propertyPrice: 1250000,
+      reservationAmount: 125000,
+      percentage: 10.0,
+      reservationDate: "19 ene 2024",
+      expirationDate: "04 feb 2024",
+      daysRemaining: 0,
+      notes: "",
+    },
+  ])
 
-  // Sort by date (most recent first)
-  const sortedReservations = [...filteredReservations].sort(
-    (a, b) => new Date(b.reservationDate).getTime() - new Date(a.reservationDate).getTime()
-  )
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false)
+  const [selectedReservation, setSelectedReservation] = useState<string | null>(null)
+  const [cancellationReason, setCancellationReason] = useState("")
 
-  const getStatusIcon = (status: Reservation["status"]) => {
-    switch (status) {
-      case "Activa":
-        return <Clock className="h-4 w-4" />
-      case "Confirmada":
-        return <CheckCircle className="h-4 w-4" />
-      case "Expirada":
-        return <XCircle className="h-4 w-4" />
-      case "Cancelada":
-        return <AlertCircle className="h-4 w-4" />
+  const handleCancelClick = (reservationId: string) => {
+    setSelectedReservation(reservationId)
+    setCancelDialogOpen(true)
+  }
+
+  const handleConfirmCancel = () => {
+    if (selectedReservation && cancellationReason.trim()) {
+      setReservations((prev) =>
+        prev.map((res) =>
+          res.id === selectedReservation ? { ...res, status: "Cancelada" as ReservationStatus } : res,
+        ),
+      )
+      setCancelDialogOpen(false)
+      setCancellationReason("")
+      setSelectedReservation(null)
     }
   }
 
-  const getStatusColor = (status: Reservation["status"]) => {
+  const getStatusColor = (status: ReservationStatus) => {
     switch (status) {
       case "Activa":
-        return "bg-blue-500/10 text-blue-500 hover:bg-blue-500/20"
-      case "Confirmada":
-        return "bg-green-500/10 text-green-500 hover:bg-green-500/20"
+        return "bg-blue-100 text-blue-700 hover:bg-blue-100"
       case "Expirada":
-        return "bg-gray-500/10 text-gray-500 hover:bg-gray-500/20"
+        return "bg-gray-100 text-gray-700 hover:bg-gray-100"
       case "Cancelada":
-        return "bg-red-500/10 text-red-500 hover:bg-red-500/20"
+        return "bg-red-100 text-red-700 hover:bg-red-100"
+      case "Confirmada":
+        return "bg-green-100 text-green-700 hover:bg-green-100"
+      default:
+        return "bg-gray-100 text-gray-700 hover:bg-gray-100"
     }
   }
 
-  const handlePrintReceipt = (reservation: Reservation) => {
-    const property = mockProperties.find((p) => p.id === reservation.propertyId)
-    const client = mockUsers.find((u) => u.id === reservation.clientId)
-    const agent = mockUsers.find((u) => u.id === reservation.agentId)
-
-    // En producción, esto abriría un PDF o imprimiría
-    alert(
-      `COMPROBANTE DE RESERVA\n\n` +
-        `Número: ${reservation.receiptNumber || "N/A"}\n` +
-        `Propiedad: ${property?.title}\n` +
-        `Cliente: ${client?.name}\n` +
-        `Agente: ${agent?.name}\n` +
-        `Monto: $${reservation.amount?.toLocaleString() || "N/A"}\n` +
-        `Fecha: ${format(new Date(reservation.reservationDate), "dd/MM/yyyy")}\n` +
-        `Vence: ${format(new Date(reservation.expiryDate), "dd/MM/yyyy")}`
-    )
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat("es-US", {
+      style: "currency",
+      currency: "USD",
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount)
   }
+
+  const totalReservations = reservations.length
+  const activeReservations = reservations.filter((r) => r.status === "Activa").length
+  const confirmedReservations = reservations.filter((r) => r.status === "Confirmada").length
+  const totalAmount = reservations.reduce((sum, r) => sum + r.reservationAmount, 0)
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Reservas</h1>
-          <p className="text-muted-foreground">
-            {user.role === "Agente" && "Gestiona las reservas de tus propiedades"}
-            {user.role === "Cliente" && "Visualiza tus reservas de propiedades"}
-            {user.role === "Administrador" && "Visualiza todas las reservas del sistema"}
-          </p>
+    <div className="min-h-screen bg-gray-50">
+      
+
+      {/* Main Content */}
+      <main className="mx-auto max-w-7xl px-6 py-8">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">Reservas</h1>
+          <p className="text-gray-600">Gestiona las reservas de tus propiedades</p>
         </div>
-      </div>
 
-      {/* Estadísticas rápidas */}
-      <div className="grid gap-4 md:grid-cols-4">
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">Total Reservas</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{sortedReservations.length}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">Activas</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-500">
-              {sortedReservations.filter((r) => r.status === "Activa").length}
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">Confirmadas</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-500">
-              {sortedReservations.filter((r) => r.status === "Confirmada").length}
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">Monto Total</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              ${sortedReservations.reduce((sum, r) => sum + (r.amount || 0), 0).toLocaleString()}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+        {/* Stats Cards */}
+        <div className="mb-8 grid gap-4 md:grid-cols-4">
+          <Card>
+            <CardContent className="p-6">
+              <div className="text-sm font-medium text-gray-600">Total Reservas</div>
+              <div className="mt-2 text-3xl font-bold">{totalReservations}</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-6">
+              <div className="text-sm font-medium text-gray-600">Activas</div>
+              <div className="mt-2 text-3xl font-bold text-blue-600">{activeReservations}</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-6">
+              <div className="text-sm font-medium text-gray-600">Confirmadas</div>
+              <div className="mt-2 text-3xl font-bold text-green-600">{confirmedReservations}</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-6">
+              <div className="text-sm font-medium text-gray-600">Monto Total</div>
+              <div className="mt-2 text-3xl font-bold">{formatCurrency(totalAmount)}</div>
+            </CardContent>
+          </Card>
+        </div>
 
-      {sortedReservations.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12">
-            <Building2 className="h-12 w-12 text-muted-foreground mb-4" />
-            <p className="text-lg font-medium text-muted-foreground">No hay reservas disponibles</p>
-            {user.role === "Agente" && (
-              <p className="text-sm text-muted-foreground mt-2">
-                Las reservas aparecerán aquí cuando reserves una propiedad
-              </p>
-            )}
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid gap-4">
-          {sortedReservations.map((reservation) => {
-            const property = mockProperties.find((p) => p.id === reservation.propertyId)
-            const client = mockUsers.find((u) => u.id === reservation.clientId)
-            const agent = mockUsers.find((u) => u.id === reservation.agentId)
-
-            if (!property || !client || !agent) return null
-
-            return (
-              <Card key={reservation.id}>
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-1 flex-1">
-                      <div className="flex items-center gap-3">
-                        <CardTitle className="text-xl">{property.title}</CardTitle>
-                        <Badge className={getStatusColor(reservation.status)}>
-                          <span className="flex items-center gap-1">
-                            {getStatusIcon(reservation.status)}
-                            {reservation.status}
-                          </span>
-                        </Badge>
-                      </div>
-                      <CardDescription className="flex items-center gap-1">
-                        <Building2 className="h-3 w-3" />
-                        {property.location}
-                      </CardDescription>
+        {/* Reservations List */}
+        <div className="space-y-6">
+          {reservations.map((reservation) => (
+            <Card key={reservation.id} className="overflow-hidden">
+              <CardContent className="p-6">
+                <div className="mb-4 flex items-start justify-between">
+                  <div>
+                    <h3 className="text-xl font-semibold">{reservation.propertyName}</h3>
+                    <div className="mt-1 flex items-center gap-1 text-sm text-gray-600">
+                      <MapPin className="h-4 w-4" />
+                      {reservation.location}
                     </div>
-                    {reservation.receiptNumber && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="gap-2 bg-transparent"
-                        onClick={() => handlePrintReceipt(reservation)}
-                      >
-                        <FileText className="h-4 w-4" />
-                        Ver Comprobante
-                      </Button>
-                    )}
                   </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                    {/* Columna 1: Información de personas */}
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-2 text-sm">
-                        <User className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                        <span className="text-muted-foreground">Cliente:</span>
-                        <span className="font-medium truncate">{client.name}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm">
-                        <User className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                        <span className="text-muted-foreground">Agente:</span>
-                        <span className="font-medium truncate">{agent.name}</span>
-                      </div>
-                      {reservation.receiptNumber && (
-                        <div className="flex items-center gap-2 text-sm">
-                          <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                          <span className="text-muted-foreground">Comprobante:</span>
-                          <span className="font-mono font-medium">{reservation.receiptNumber}</span>
-                        </div>
-                      )}
-                    </div>
+                  <Badge className={getStatusColor(reservation.status)}>{reservation.status}</Badge>
+                </div>
 
-                    {/* Columna 2: Información financiera */}
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-2 text-sm">
-                        <Building2 className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                        <span className="text-muted-foreground">Precio Propiedad:</span>
-                        <span className="font-medium">${property.price.toLocaleString()}</span>
-                      </div>
-                      {reservation.amount && (
-                        <div className="flex items-center gap-2 text-sm">
-                          <DollarSign className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                          <span className="text-muted-foreground">Monto Reserva:</span>
-                          <span className="font-bold text-primary">${reservation.amount.toLocaleString()}</span>
-                        </div>
-                      )}
-                      {reservation.amount && (
-                        <div className="flex items-center gap-2 text-sm">
-                          <span className="text-muted-foreground ml-6">Porcentaje:</span>
-                          <span className="font-medium">
-                            {((reservation.amount / property.price) * 100).toFixed(1)}%
-                          </span>
-                        </div>
-                      )}
+                <div className="grid gap-4 md:grid-cols-3">
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2 text-sm">
+                      <User className="h-4 w-4 text-gray-400" />
+                      <span className="text-gray-600">Cliente:</span>
+                      <span className="font-medium">{reservation.client}</span>
                     </div>
-
-                    {/* Columna 3: Información de fechas */}
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-2 text-sm">
-                        <Calendar className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                        <span className="text-muted-foreground">Fecha Reserva:</span>
-                        <span className="font-medium">
-                          {format(new Date(reservation.reservationDate), "dd MMM yyyy", { locale: es })}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm">
-                        <Clock className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                        <span className="text-muted-foreground">Fecha Vencimiento:</span>
-                        <span className="font-medium">
-                          {format(new Date(reservation.expiryDate), "dd MMM yyyy", { locale: es })}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm">
-                        <Clock className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                        <span className="text-muted-foreground">Días restantes:</span>
-                        <span className="font-medium">
-                          {Math.max(
-                            0,
-                            Math.ceil(
-                              (new Date(reservation.expiryDate).getTime() - new Date().getTime()) /
-                                (1000 * 60 * 60 * 24)
-                            )
-                          )}{" "}
-                          días
-                        </span>
-                      </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <User className="h-4 w-4 text-gray-400" />
+                      <span className="text-gray-600">Agente:</span>
+                      <span className="font-medium">{reservation.agent}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <FileText className="h-4 w-4 text-gray-400" />
+                      <span className="text-gray-600">Comprobante:</span>
+                      <span className="font-medium">{reservation.voucher}</span>
                     </div>
                   </div>
 
-                  {reservation.notes && (
-                    <div className="mt-4 rounded-lg bg-muted p-3">
-                      <p className="text-sm font-medium mb-1">Notas:</p>
-                      <p className="text-sm text-muted-foreground">{reservation.notes}</p>
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2 text-sm">
+                      <Building2 className="h-4 w-4 text-gray-400" />
+                      <span className="text-gray-600">Precio Propiedad:</span>
+                      <span className="font-medium">{formatCurrency(reservation.propertyPrice)}</span>
                     </div>
-                  )}
-                </CardContent>
-              </Card>
-            )
-          })}
-        </div>
-      )}
+                    <div className="flex items-center gap-2 text-sm">
+                      <DollarSign className="h-4 w-4 text-gray-400" />
+                      <span className="text-gray-600">Monto Reserva:</span>
+                      <span className="font-medium text-blue-600">{formatCurrency(reservation.reservationAmount)}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <span className="text-gray-600">Porcentaje:</span>
+                      <span className="font-medium">{reservation.percentage}%</span>
+                    </div>
+                  </div>
 
-      {/* Guía informativa */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Información sobre Reservas</CardTitle>
-          <CardDescription>Gestión del ciclo de vida de las reservas</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3 text-sm">
-          <div className="flex gap-3">
-            <div className="rounded-full bg-blue-500/10 p-1 h-6 w-6 flex items-center justify-center flex-shrink-0">
-              <Clock className="h-3 w-3 text-blue-500" />
-            </div>
-            <div>
-              <p className="font-medium">Activa</p>
-              <p className="text-muted-foreground">
-                Reserva vigente dentro del período establecido. El cliente tiene prioridad sobre la propiedad.
-              </p>
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2 text-sm">
+                      <Calendar className="h-4 w-4 text-gray-400" />
+                      <span className="text-gray-600">Fecha Reserva:</span>
+                      <span className="font-medium">{reservation.reservationDate}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <Calendar className="h-4 w-4 text-gray-400" />
+                      <span className="text-gray-600">Fecha Vencimiento:</span>
+                      <span className="font-medium">{reservation.expirationDate}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <Clock className="h-4 w-4 text-gray-400" />
+                      <span className="text-gray-600">Días restantes:</span>
+                      <span className="font-medium">{reservation.daysRemaining} días</span>
+                    </div>
+                  </div>
+                </div>
+
+                {reservation.notes && (
+                  <div className="mt-4 rounded-lg bg-gray-50 p-4">
+                    <div className="text-sm font-medium text-gray-700">Notas:</div>
+                    <div className="mt-1 text-sm text-gray-600">{reservation.notes}</div>
+                  </div>
+                )}
+
+                <div className="mt-4 flex justify-start gap-2">
+                  <Button
+                    variant="outline"
+                    className="gap-2 bg-transparent"
+                    disabled={reservation.status === "Cancelada"}
+                  >
+                    <CheckCircle className="h-4 w-4" />
+                    Finalizar Venta
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => handleCancelClick(reservation.id)}
+                    className="gap-2 text-red-600 hover:bg-red-50 hover:text-red-700"
+                    disabled={reservation.status === "Cancelada"}
+                  >
+                    <X className="h-4 w-4" />
+                    Cancelar Reserva
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </main>
+
+      <Dialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirmar Cancelación</DialogTitle>
+            <DialogDescription>
+              ¿Estás seguro de que deseas cancelar esta reserva? Esta acción no se puede deshacer.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="reason">Motivo de la cancelación</Label>
+              <Textarea
+                id="reason"
+                placeholder="Ingresa el motivo de la cancelación..."
+                value={cancellationReason}
+                onChange={(e) => setCancellationReason(e.target.value)}
+                rows={4}
+              />
             </div>
           </div>
-          <div className="flex gap-3">
-            <div className="rounded-full bg-green-500/10 p-1 h-6 w-6 flex items-center justify-center flex-shrink-0">
-              <CheckCircle className="h-3 w-3 text-green-500" />
-            </div>
-            <div>
-              <p className="font-medium">Confirmada</p>
-              <p className="text-muted-foreground">
-                El cliente ha confirmado la compra. Pendiente de firma de contrato y pago completo.
-              </p>
-            </div>
-          </div>
-          <div className="flex gap-3">
-            <div className="rounded-full bg-gray-500/10 p-1 h-6 w-6 flex items-center justify-center flex-shrink-0">
-              <XCircle className="h-3 w-3 text-gray-500" />
-            </div>
-            <div>
-              <p className="font-medium">Expirada</p>
-              <p className="text-muted-foreground">
-                La reserva venció sin confirmación. La propiedad vuelve a estar disponible.
-              </p>
-            </div>
-          </div>
-          <div className="flex gap-3">
-            <div className="rounded-full bg-red-500/10 p-1 h-6 w-6 flex items-center justify-center flex-shrink-0">
-              <AlertCircle className="h-3 w-3 text-red-500" />
-            </div>
-            <div>
-              <p className="font-medium">Cancelada</p>
-              <p className="text-muted-foreground">
-                Reserva cancelada por el agente o cliente. La propiedad vuelve a estar disponible.
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCancelDialogOpen(false)}>
+              Volver
+            </Button>
+            <Button variant="destructive" onClick={handleConfirmCancel} disabled={!cancellationReason.trim()}>
+              Confirmar Cancelación
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
